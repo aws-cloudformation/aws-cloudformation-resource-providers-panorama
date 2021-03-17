@@ -21,3 +21,4 @@ Resources:
       Handler: software.amazon.panorama.node.HandlerWrapper::testEntrypoint
       Runtime: java8
       CodeUri: ./target/aws-panorama-node-handler-1.0-SNAPSHOT.jar
+
