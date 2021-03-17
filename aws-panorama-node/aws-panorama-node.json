@@ -1,162 +1,166 @@
 {
-    "typeName": "AWS::Panorama::Node",
-    "description": "Resource schema for a Panorama Node.",
-    "definitions": {
-        "NodePackageObject": {
-            "type": "object",
-            "properties": {
-                "Name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255,
-                    "pattern": "^[a-zA-Z0-9\\-\\_]+$"
-                },
-                "Version": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255,
-                    "pattern": "^[1-9][0-9]{0,2}\\.[0-9][0-9]{0,2}"
-                }
-            },
-            "additionalProperties": false
-        },
-        "InputConfigObject": {
-            "type": "object",
-            "properties": {
-                "PackageS3Uri": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                }
-            },
-            "additionalProperties": false
-        },
-        "OutputConfigObject": {
-            "type": "object",
-            "properties": {
-                "PackageName": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255,
-                    "pattern": "^[a-zA-Z0-9\\-\\_]+$"
-                },
-                "PackageVersion": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255,
-                    "pattern": "^[1-9][0-9]{0,2}\\.[0-9][0-9]{0,2}"
-                },
-                "KmsKeyId": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                }
-            },
-            "additionalProperties": false
-        }
-    },
-    "properties": {
-        "NodeId": {
-            "description": "The identifier for a node.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
-        },
+  "typeName": "AWS::Panorama::Node",
+  "description": "Resource schema for a Panorama Node.",
+  "definitions": {
+    "NodePackageObject": {
+      "type": "object",
+      "properties": {
         "Name": {
-            "description": "The name of a node.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-zA-Z0-9\\-\\_]+$"
         },
-        "Type": {
-            "description": "The type of a node.",
-            "type": "string",
-            "enum": ["LambdaFunction", "ContainerModule", "Model"]
-        },
-        "SourceNodePackage": {
-            "description": "The node package that contains this node.",
-            "$ref": "#/definitions/NodePackageObject"
-        },
-        "NodeInterfacePayload": {
-            "description": "JSON string representing inputs and outputs of the node as defined in the source node package manifest.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 2048
-        },
-        "CreatedTime": {
-            "description": "Timestamp of node's creation, represented as a float in epoch-seconds.",
-            "type": "number"
-        },
-
-        "JobType": {
-            "description": "Type of the node package import job.",
-            "type": "string",
-            "enum": ["DataSource", "NodePackageVersion", "MarketplaceNodePackageVersion"]
-        },
-        "InputConfig": {
-            "description": "One of an S3 URI (pointing to a JSON node package manifest) or a JSON payload describing a datasource definition.",
-            "$ref": "#/definitions/InputConfigObject"
-        },
-        "OutputConfig": {
-            "description": "Configuration of output of node package import such as name, version, KMS encryption key.",
-            "$ref": "#/definitions/OutputConfigObject"
-        },
-        "ClientToken": {
-            "description": "Optional user provided token to ensure idempotency of requests.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
+        "Version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[1-9][0-9]{0,2}\\.[0-9][0-9]{0,2}"
         }
+      },
+      "additionalProperties": false
     },
-    "additionalProperties": false,
-    "required": [
-        "Name",
-        "Type",
-        "NodeInterfacePayload",
-
-        "JobType",
-        "InputConfig",
-        "OutputConfig"
-    ],
-    "readOnlyProperties": [
-        "/properties/NodeId",
-        "/properties/SourceNodePackage",
-        "/properties/CreatedTime"
-    ],
-    "createOnlyProperties": [
-        "/properties/JobType",
-        "/properties/InputConfig",
-        "/properties/OutputConfig",
-        "/properties/ClientConfig"
-    ],
-    "primaryIdentifier": [
-        "/properties/NodeId"
-    ],
-    "handlers": {
-        "create": {
-            "permissions": [
-                "panorama:CreatePackageImportJob"
-            ]
-        },
-        "read": {
-            "permissions": [
-                "panorama:DescribeNode",
-                "panorama:DescribePackageImportJob"
-            ]
-        },
-        "update": {
-            "permissions": [
-            ]
-        },
-        "delete": {
-            "permissions": [
-            ]
-        },
-        "list": {
-            "permissions": [
-                "panorama:ListNodes",
-                "panorama:ListPackageImportJobs"
-            ]
+    "InputConfigObject": {
+      "type": "object",
+      "properties": {
+        "PackageS3Uri": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
         }
+      },
+      "additionalProperties": false
+    },
+    "OutputConfigObject": {
+      "type": "object",
+      "properties": {
+        "PackageName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-zA-Z0-9\\-\\_]+$"
+        },
+        "PackageVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[1-9][0-9]{0,2}\\.[0-9][0-9]{0,2}"
+        },
+        "KmsKeyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        }
+      },
+      "additionalProperties": false
     }
+  },
+  "properties": {
+    "NodeId": {
+      "description": "The identifier for a node.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "Name": {
+      "description": "The name of a node.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "Type": {
+      "description": "The type of a node.",
+      "type": "string",
+      "enum": [
+        "LambdaFunction",
+        "ContainerModule",
+        "Model"
+      ]
+    },
+    "SourceNodePackage": {
+      "description": "The node package that contains this node.",
+      "$ref": "#/definitions/NodePackageObject"
+    },
+    "NodeInterfacePayload": {
+      "description": "JSON string representing inputs and outputs of the node as defined in the source node package manifest.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "CreatedTime": {
+      "description": "Timestamp of node's creation, represented as a float in epoch-seconds.",
+      "type": "number"
+    },
+    "JobType": {
+      "description": "Type of the node package import job.",
+      "type": "string",
+      "enum": [
+        "DataSource",
+        "NodePackageVersion",
+        "MarketplaceNodePackageVersion"
+      ]
+    },
+    "InputConfig": {
+      "description": "One of an S3 URI (pointing to a JSON node package manifest) or a JSON payload describing a datasource definition.",
+      "$ref": "#/definitions/InputConfigObject"
+    },
+    "OutputConfig": {
+      "description": "Configuration of output of node package import such as name, version, KMS encryption key.",
+      "$ref": "#/definitions/OutputConfigObject"
+    },
+    "ClientToken": {
+      "description": "Optional user provided token to ensure idempotency of requests.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "Name",
+    "Type",
+    "NodeInterfacePayload",
+    "JobType",
+    "InputConfig",
+    "OutputConfig"
+  ],
+  "readOnlyProperties": [
+    "/properties/NodeId",
+    "/properties/SourceNodePackage",
+    "/properties/CreatedTime"
+  ],
+  "createOnlyProperties": [
+    "/properties/JobType",
+    "/properties/InputConfig",
+    "/properties/OutputConfig",
+    "/properties/ClientConfig"
+  ],
+  "primaryIdentifier": [
+    "/properties/NodeId"
+  ],
+  "handlers": {
+    "create": {
+      "permissions": [
+        "panorama:CreatePackageImportJob"
+      ]
+    },
+    "read": {
+      "permissions": [
+        "panorama:DescribeNode",
+        "panorama:DescribePackageImportJob"
+      ]
+    },
+    "update": {
+      "permissions": []
+    },
+    "delete": {
+      "permissions": []
+    },
+    "list": {
+      "permissions": [
+        "panorama:ListNodes",
+        "panorama:ListPackageImportJobs"
+      ]
+    }
+  }
 }
