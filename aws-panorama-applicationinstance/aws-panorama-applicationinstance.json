@@ -3,97 +3,164 @@
   "description": "An example resource schema demonstrating some basic constructs and validation rules.",
   "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-rpdk.git",
   "definitions": {
-    "InitechDateFormat": {
-      "$comment": "Use the `definitions` block to provide shared resource property schemas",
+    "Name": {
       "type": "string",
-      "format": "date-time"
+      "minLength": 1,
+      "maxLength": 255
     },
-    "Memo": {
+    "Description": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 255
+    },
+    "ManifestPayload": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 51200
+    },
+    "ManifestOverridesPayload": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 51200
+    },
+    "ExecutionRoleArn": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^arn:aws:iam::[0-9]{12}:role/.+$"
+    },
+    "DefaultExecutionContextDevice": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "ApplicationInstanceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "ApplicationInstanceStatusDescription": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "CreatedTime": {
+      "description": "Created time for the device",
+      "type": "integer"
+    },
+    "LastUpdatedTime": {
+      "description": "Last updated time for this device",
+      "type": "integer"
+    },
+    "DeviceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^[a-zA-Z0-9\\-\\_]+$"
+    },
+    "ApplicationInstanceStatus": {
+      "type": "string",
+      "enum": [
+        "DEPLOYING",
+        "REMOVING",
+        "FAILED",
+        "REMOVED",
+        "RUNNING",
+        "STOPPED"
+      ]
+    },
+    "StatusFilter": {
+      "type": "string",
+      "enum": [
+        "FAILED",
+        "REMOVED",
+        "RUNNING"
+      ]
+    },
+    "ApplicationInstance": {
       "type": "object",
       "properties": {
-        "Heading": {
-          "type": "string"
+        "Name": {
+          "$ref": "#/definitions/Name"
         },
-        "Body": {
-          "type": "string"
+        "ApplicationInstanceId": {
+          "$ref": "#/definitions/ApplicationInstanceId"
+        },
+        "DefaultExecutionContextDevice": {
+          "$ref": "#/definitions/DefaultExecutionContextDevice"
+        },
+        "Description": {
+          "$ref": "#/definitions/Description"
+        },
+        "Status": {
+          "$ref": "#/definitions/ApplicationInstanceStatus"
+        },
+        "StatusDescription": {
+          "$ref": "#/definitions/ApplicationInstanceStatusDescription"
+        },
+        "CreatedTime": {
+          "$ref": "#/definitions/CreatedTime"
         }
       },
       "additionalProperties": false
     },
-    "Tag": {
-      "description": "A key-value pair to associate with a resource.",
-      "type": "object",
-      "properties": {
-        "Key": {
-          "type": "string",
-          "description": "The key name of the tag. You can specify a value that is 1 to 128 Unicode characters in length and cannot be prefixed with aws:. You can use any of the following characters: the set of Unicode letters, digits, whitespace, _, ., /, =, +, and -.",
-          "minLength": 1,
-          "maxLength": 128
-        },
-        "Value": {
-          "type": "string",
-          "description": "The value for the tag. You can specify a value that is 0 to 256 Unicode characters in length and cannot be prefixed with aws:. You can use any of the following characters: the set of Unicode letters, digits, whitespace, _, ., /, =, +, and -.",
-          "minLength": 0,
-          "maxLength": 256
-        }
-      },
-      "required": [
-        "Key",
-        "Value"
-      ],
-      "additionalProperties": false
+    "ApplicationInstances": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/ApplicationInstance"
+      }
+    },
+    "MaxResults": {
+      "description": "Max number of ApplicationInstances to return for ListApplicationInstances",
+      "type": "integer"
     }
   },
   "properties": {
-    "TPSCode": {
-      "description": "A TPS Code is automatically generated on creation and assigned as the unique identifier.",
-      "type": "string",
-      "pattern": "^[A-Z]{3,5}[0-9]{8}-[0-9]{4}$"
+    "Name": {
+      "$ref": "#/definitions/Name"
     },
-    "Title": {
-      "description": "The title of the TPS report is a mandatory element.",
-      "type": "string",
-      "minLength": 20,
-      "maxLength": 250
+    "Description": {
+      "$ref": "#/definitions/Description"
     },
-    "CoverSheetIncluded": {
-      "description": "Required for all TPS Reports submitted after 2/19/1999",
-      "type": "boolean"
+    "ManifestPayload": {
+      "$ref": "#/definitions/ManifestPayload"
     },
-    "DueDate": {
-      "$ref": "#/definitions/InitechDateFormat"
+    "ManifestOverridesPayload": {
+      "$ref": "#/definitions/ManifestOverridesPayload"
     },
-    "ApprovalDate": {
-      "$ref": "#/definitions/InitechDateFormat"
+    "ExecutionRoleArn": {
+      "$ref": "#/definitions/ExecutionRoleArn"
     },
-    "Memo": {
-      "$ref": "#/definitions/Memo"
+    "DefaultExecutionContextDevice": {
+      "$ref": "#/definitions/DefaultExecutionContextDevice"
     },
-    "SecondCopyOfMemo": {
-      "description": "In case you didn't get the first one.",
-      "$ref": "#/definitions/Memo"
+    "ApplicationInstanceId": {
+      "$ref": "#/definitions/ApplicationInstanceId"
     },
-    "TestCode": {
-      "type": "string",
-      "enum": [
-        "NOT_STARTED",
-        "CANCELLED"
-      ]
+    "DeviceId": {
+      "$ref": "#/definitions/DeviceId"
     },
-    "Authors": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
+    "StatusFilter": {
+      "$ref": "#/definitions/StatusFilter"
     },
-    "Tags": {
-      "description": "An array of key-value pairs to apply to this resource.",
-      "type": "array",
-      "uniqueItems": true,
-      "insertionOrder": false,
-      "items": {
-        "$ref": "#/definitions/Tag"
-      }
+    "ApplicationInstances": {
+      "$ref": "#/definitions/ApplicationInstances"
+    },
+    "Status": {
+      "$ref": "#/definitions/ApplicationInstanceStatus"
+    },
+    "StatusDescription": {
+      "$ref": "#/definitions/ApplicationInstanceStatusDescription"
+    },
+    "CreatedTime": {
+      "$ref": "#/definitions/CreatedTime"
+    },
+    "LastUpdatedTime": {
+      "$ref": "#/definitions/LastUpdatedTime"
+    },
+    "MaxResults": {
+      "$ref": "#/definitions/MaxResults"
     }
   },
   "additionalProperties": false,
@@ -102,35 +169,40 @@
     "Title"
   ],
   "readOnlyProperties": [
-    "/properties/TPSCode"
+    "/properties/ApplicationInstanceId",
+    "/properties/Status",
+    "/properties/StatusDescription"
+  ],
+  "createOnlyProperties": [
+    "/properties/Name",
+    "/properties/Description",
+    "/properties/ManifestPayload",
+    "/properties/ManifestOverridesPayload",
+    "/properties/ExecutionRoleArn",
+    "/properties/DefaultExecutionContextDevice"
   ],
   "primaryIdentifier": [
-    "/properties/TPSCode"
+    "/properties/ApplicationInstanceId"
   ],
   "handlers": {
     "create": {
       "permissions": [
-        "initech:CreateReport"
+        "panorama:CreateApplicationInstance"
       ]
     },
     "read": {
       "permissions": [
-        "initech:DescribeReport"
-      ]
-    },
-    "update": {
-      "permissions": [
-        "initech:UpdateReport"
+        "panorama:DescribeApplicationInstance"
       ]
     },
     "delete": {
       "permissions": [
-        "initech:DeleteReport"
+        "panorama:RemoveApplicationInstance"
       ]
     },
     "list": {
       "permissions": [
-        "initech:ListReports"
+        "panorama:ListApplicationInstances"
       ]
     }
   }
