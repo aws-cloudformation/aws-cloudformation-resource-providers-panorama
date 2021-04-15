@@ -1,8 +1,12 @@
 package software.amazon.panorama.applicationinstance;
 
-import com.google.common.collect.Lists;
-import software.amazon.awssdk.awscore.AwsRequest;
-import software.amazon.awssdk.awscore.AwsResponse;
+import software.amazon.awssdk.services.panorama.model.CreateApplicationInstanceRequest;
+import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceRequest;
+import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceResponse;
+import software.amazon.awssdk.services.panorama.model.ListApplicationInstancesRequest;
+import software.amazon.awssdk.services.panorama.model.ListApplicationInstancesResponse;
+import software.amazon.awssdk.services.panorama.model.RemoveApplicationInstanceRequest;
+import software.amazon.awssdk.services.panorama.model.StatusFilter;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,108 +16,129 @@ import java.util.stream.Stream;
 
 /**
  * This class is a centralized placeholder for
- *  - api request construction
- *  - object translation to/from aws sdk
+ *  - ApplicationInstance request construction
+ *  - object translation to/from Panorama sdk
  *  - resource model construction for read/list handlers
  */
-
 public class Translator {
 
   /**
-   * Request to create a resource
+   * Request to create an ApplicationInstance
    * @param model resource model
-   * @return awsRequest the aws service request to create a resource
+   * @return CreateApplicationInstanceRequest the aws service request to create a resource
    */
-  static AwsRequest translateToCreateRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L39-L43
-    return awsRequest;
+  static CreateApplicationInstanceRequest translateToCreateRequest(final ResourceModel model) {
+    final CreateApplicationInstanceRequest.Builder builder = CreateApplicationInstanceRequest.builder()
+            .manifestPayload(model.getManifestPayload())
+            .defaultExecutionContextDevice(model.getDefaultExecutionContextDevice());
+
+    if (model.getName() != null) {
+      builder.name(model.getName());
+    }
+
+    if (model.getDescription() != null) {
+      builder.description(model.getDescription());
+    }
+
+    if (model.getManifestOverridesPayload() != null) {
+      builder.manifestOverridesPayload(model.getManifestOverridesPayload());
+    }
+
+    if (model.getExecutionRoleArn() != null) {
+      builder.executionRoleArn(model.getExecutionRoleArn());
+    }
+
+    return builder.build();
   }
 
   /**
-   * Request to read a resource
+   * Request to read ApplicationInstance
    * @param model resource model
-   * @return awsRequest the aws service request to describe a resource
+   * @return DescribeApplicationInstanceRequest the request to describe an ApplicationInstance
    */
-  static AwsRequest translateToReadRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L20-L24
-    return awsRequest;
+  static DescribeApplicationInstanceRequest translateToReadRequest(final ResourceModel model) {
+    return DescribeApplicationInstanceRequest.builder()
+            .applicationInstanceId(model.getApplicationInstanceId())
+            .build();
   }
 
   /**
    * Translates resource object from sdk into a resource model
-   * @param awsResponse the aws service describe resource response
+   * @param response the aws service describe resource response
    * @return model resource model
    */
-  static ResourceModel translateFromReadResponse(final AwsResponse awsResponse) {
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L58-L73
-    return ResourceModel.builder()
-        //.someProperty(response.property())
-        .build();
+  static ResourceModel translateFromReadResponse(final DescribeApplicationInstanceResponse response) {
+    ResourceModel.ResourceModelBuilder builder = ResourceModel.builder()
+            .name(response.name())
+            .description(response.description())
+            .applicationInstanceId(response.applicationInstanceId())
+            .defaultExecutionContextDevice(response.defaultExecutionContextDevice())
+            .executionRoleArn(response.executionRoleArn())
+            .manifestPayload(response.manifestPayload())
+            .manifestOverridesPayload(response.manifestOverridesPayload())
+            .status(response.statusAsString())
+            .statusDescription(response.statusDescription())
+            .createdTime(Long.valueOf(response.createdTime().getEpochSecond()).intValue())
+            .lastUpdatedTime(Long.valueOf(response.lastUpdatedTime().getEpochSecond()).intValue());
+
+    if (response.manifestOverridesPayload() != null && !response.manifestOverridesPayload().isEmpty()) {
+      builder.manifestOverridesPayload(response.manifestOverridesPayload());
+    }
+    return builder.build();
   }
 
   /**
-   * Request to delete a resource
+   * Request to delete an ApplicationInstance
    * @param model resource model
-   * @return awsRequest the aws service request to delete a resource
+   * @return RemoveApplicationInstanceRequest the request to delete an ApplicationInstance
    */
-  static AwsRequest translateToDeleteRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L33-L37
-    return awsRequest;
+  static RemoveApplicationInstanceRequest translateToDeleteRequest(final ResourceModel model) {
+    return RemoveApplicationInstanceRequest.builder()
+            .applicationInstanceId(model.getApplicationInstanceId())
+            .build();
   }
 
   /**
-   * Request to update properties of a previously created resource
-   * @param model resource model
-   * @return awsRequest the aws service request to modify a resource
+   * Request to list ApplicationInstances
+   *
+   * @param deviceId device id to filter the ApplicationInstances
+   * @param statusFilter status to filter the ApplicationInstances
+   * @param maxResults max number of ApplicationInstances in this request
+   * @param nextToken nextToken to start list ApplicationInstances
+   * @return ListApplicationInstancesRequest to list ApplicationInstances
    */
-  static AwsRequest translateToFirstUpdateRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L45-L50
-    return awsRequest;
+  static ListApplicationInstancesRequest translateToListRequest(
+          final String deviceId,
+          final String statusFilter,
+          final Integer maxResults,
+          final String nextToken
+  ) {
+    final ListApplicationInstancesRequest.Builder builder = ListApplicationInstancesRequest.builder()
+            .nextToken(nextToken)
+            .maxResults(maxResults);
+
+    if (deviceId != null) {
+      builder.deviceId(deviceId);
+    }
+
+    if (statusFilter != null) {
+      builder.statusFilter(StatusFilter.valueOf(statusFilter));
+    }
+
+    return builder.build();
   }
 
   /**
-   * Request to update some other properties that could not be provisioned through first update request
-   * @param model resource model
-   * @return awsRequest the aws service request to modify a resource
-   */
-  static AwsRequest translateToSecondUpdateRequest(final ResourceModel model) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    return awsRequest;
-  }
-
-  /**
-   * Request to list resources
-   * @param nextToken token passed to the aws service list resources request
-   * @return awsRequest the aws service request to list resources within aws account
-   */
-  static AwsRequest translateToListRequest(final String nextToken) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L26-L31
-    return awsRequest;
-  }
-
-  /**
-   * Translates resource objects from sdk into a resource model (primary identifier only)
-   * @param awsResponse the aws service describe resource response
+   * Translates resource objects from Panorama response into a resource model (primary identifier only)
+   * @param listApplicationInstancesResponse Panorama ListApplicationInstancesResponse
    * @return list of resource models
    */
-  static List<ResourceModel> translateFromListRequest(final AwsResponse awsResponse) {
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L75-L82
-    return streamOfOrEmpty(Lists.newArrayList())
+  static List<ResourceModel> translateFromListResponse(final ListApplicationInstancesResponse listApplicationInstancesResponse) {
+    return streamOfOrEmpty(listApplicationInstancesResponse.applicationInstances())
         .map(resource -> ResourceModel.builder()
-            // include only primary identifier
-            .build())
-        .collect(Collectors.toList());
+                .applicationInstanceId(resource.applicationInstanceId())
+                .build()
+        ).collect(Collectors.toList());
   }
 
   private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {
