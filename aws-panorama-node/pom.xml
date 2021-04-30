@@ -5,9 +5,9 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>software.amazon.panorama.applicationinstance</groupId>
-    <artifactId>aws-panorama-applicationinstance-handler</artifactId>
-    <name>aws-panorama-applicationinstance-handler</name>
+    <groupId>software.amazon.panorama.node</groupId>
+    <artifactId>aws-panorama-node-handler</artifactId>
+    <name>aws-panorama-node-handler</name>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -23,11 +23,6 @@
         <dependency>
             <groupId>software.amazon.cloudformation</groupId>
             <artifactId>aws-cloudformation-rpdk-java-plugin</artifactId>
-            <version>[2.0.0,3.0.0)</version>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>panorama</artifactId>
             <version>[2.0.0,3.0.0)</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
@@ -219,7 +214,7 @@
             <resource>
                 <directory>${project.basedir}</directory>
                 <includes>
-                    <include>aws-panorama-applicationinstance.json</include>
+                    <include>aws-panorama-node.json</include>
                 </includes>
             </resource>
         </resources>

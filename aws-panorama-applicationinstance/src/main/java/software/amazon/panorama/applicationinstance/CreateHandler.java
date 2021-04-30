@@ -26,7 +26,6 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-
 public class CreateHandler extends BaseHandlerStd {
     protected static final BiFunction<ResourceModel, ProxyClient<PanoramaClient>, ResourceModel> EMPTY_CALL =
             (model, proxyClient) -> model;
