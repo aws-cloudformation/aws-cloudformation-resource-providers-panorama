@@ -5,11 +5,16 @@ import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanc
 import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceResponse;
 import software.amazon.awssdk.services.panorama.model.ListApplicationInstancesRequest;
 import software.amazon.awssdk.services.panorama.model.ListApplicationInstancesResponse;
+import software.amazon.awssdk.services.panorama.model.ListTagsForResourceResponse;
+import software.amazon.awssdk.services.panorama.model.ManifestOverridesPayload;
+import software.amazon.awssdk.services.panorama.model.ManifestPayload;
 import software.amazon.awssdk.services.panorama.model.RemoveApplicationInstanceRequest;
 import software.amazon.awssdk.services.panorama.model.StatusFilter;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -29,8 +34,10 @@ public class Translator {
    */
   static CreateApplicationInstanceRequest translateToCreateRequest(final ResourceModel model) {
     final CreateApplicationInstanceRequest.Builder builder = CreateApplicationInstanceRequest.builder()
-            .manifestPayload(model.getManifestPayload())
-            .defaultExecutionContextDevice(model.getDefaultExecutionContextDevice());
+            .manifestPayload(ManifestPayload.builder()
+                    .payloadData(model.getManifestPayload().getPayloadData())
+                    .build())
+            .defaultRuntimeContextDevice(model.getDefaultRuntimeContextDevice());
 
     if (model.getName() != null) {
       builder.name(model.getName());
@@ -41,11 +48,25 @@ public class Translator {
     }
 
     if (model.getManifestOverridesPayload() != null) {
-      builder.manifestOverridesPayload(model.getManifestOverridesPayload());
+      builder.manifestOverridesPayload(ManifestOverridesPayload.builder()
+              .payloadData(model.getManifestOverridesPayload().getPayloadData())
+              .build());
     }
 
-    if (model.getExecutionRoleArn() != null) {
-      builder.executionRoleArn(model.getExecutionRoleArn());
+    if (model.getApplicationInstanceIdToReplace() != null) {
+      builder.applicationInstanceIdToReplace(model.getApplicationInstanceIdToReplace());
+    }
+
+    if (model.getRuntimeRoleArn() != null) {
+      builder.runtimeRoleArn(model.getRuntimeRoleArn());
+    }
+
+    if (model.getTags() != null && !model.getTags().isEmpty()) {
+      Map<String, String> tagMap = new HashMap<>();
+      for (Tag tag : model.getTags()) {
+        tagMap.put(tag.getKey(), tag.getValue());
+      }
+      builder.tags(tagMap);
     }
 
     return builder.build();
@@ -65,25 +86,38 @@ public class Translator {
   /**
    * Translates resource object from sdk into a resource model
    * @param response the aws service describe resource response
-   * @return model resource model
+   * @param listTagsForResourceResponse response for listing tags related to the resource
+   * @return
    */
-  static ResourceModel translateFromReadResponse(final DescribeApplicationInstanceResponse response) {
+  static ResourceModel translateFromReadResponse(final DescribeApplicationInstanceResponse response,
+                                                 final ListTagsForResourceResponse listTagsForResourceResponse) {
     ResourceModel.ResourceModelBuilder builder = ResourceModel.builder()
             .name(response.name())
             .description(response.description())
             .applicationInstanceId(response.applicationInstanceId())
-            .defaultExecutionContextDevice(response.defaultExecutionContextDevice())
-            .executionRoleArn(response.executionRoleArn())
-            .manifestPayload(response.manifestPayload())
-            .manifestOverridesPayload(response.manifestOverridesPayload())
+            .applicationInstanceIdToReplace(response.applicationInstanceIdToReplace())
+            .defaultRuntimeContextDevice(response.defaultRuntimeContextDevice())
+            .defaultRuntimeContextDeviceName(response.defaultRuntimeContextDeviceName())
+            .runtimeRoleArn(response.runtimeRoleArn())
             .status(response.statusAsString())
+            .healthStatus(response.healthStatusAsString())
             .statusDescription(response.statusDescription())
             .createdTime(Long.valueOf(response.createdTime().getEpochSecond()).intValue())
-            .lastUpdatedTime(Long.valueOf(response.lastUpdatedTime().getEpochSecond()).intValue());
+            .lastUpdatedTime(Long.valueOf(response.lastUpdatedTime().getEpochSecond()).intValue())
+            .arn(response.arn());
 
-    if (response.manifestOverridesPayload() != null && !response.manifestOverridesPayload().isEmpty()) {
-      builder.manifestOverridesPayload(response.manifestOverridesPayload());
+    if (listTagsForResourceResponse.hasTags()) {
+      builder.tags(listTagsForResourceResponse.tags().entrySet()
+              .stream()
+              .map(tag ->
+                      Tag.builder()
+                              .key(tag.getKey())
+                              .value(tag.getValue())
+                              .build()
+              )
+              .collect(Collectors.toList()));
     }
+
     return builder.build();
   }
 
@@ -103,19 +137,16 @@ public class Translator {
    *
    * @param deviceId device id to filter the ApplicationInstances
    * @param statusFilter status to filter the ApplicationInstances
-   * @param maxResults max number of ApplicationInstances in this request
    * @param nextToken nextToken to start list ApplicationInstances
    * @return ListApplicationInstancesRequest to list ApplicationInstances
    */
   static ListApplicationInstancesRequest translateToListRequest(
           final String deviceId,
           final String statusFilter,
-          final Integer maxResults,
           final String nextToken
   ) {
     final ListApplicationInstancesRequest.Builder builder = ListApplicationInstancesRequest.builder()
-            .nextToken(nextToken)
-            .maxResults(maxResults);
+            .nextToken(nextToken);
 
     if (deviceId != null) {
       builder.deviceId(deviceId);
@@ -135,15 +166,24 @@ public class Translator {
    */
   static List<ResourceModel> translateFromListResponse(final ListApplicationInstancesResponse listApplicationInstancesResponse) {
     return streamOfOrEmpty(listApplicationInstancesResponse.applicationInstances())
-        .map(resource -> ResourceModel.builder()
-                .applicationInstanceId(resource.applicationInstanceId())
-                .build()
-        ).collect(Collectors.toList());
+            .map(applicationInstance -> ResourceModel.builder()
+                    .name(applicationInstance.name())
+                    .description(applicationInstance.description())
+                    .applicationInstanceId(applicationInstance.applicationInstanceId())
+                    .defaultRuntimeContextDevice(applicationInstance.defaultRuntimeContextDevice())
+                    .defaultRuntimeContextDeviceName(applicationInstance.defaultRuntimeContextDeviceName())
+                    .status(applicationInstance.statusAsString())
+                    .healthStatus(applicationInstance.healthStatusAsString())
+                    .statusDescription(applicationInstance.statusDescription())
+                    .createdTime(Long.valueOf(applicationInstance.createdTime().getEpochSecond()).intValue())
+                    .arn(applicationInstance.arn())
+                    .build()
+            ).collect(Collectors.toList());
   }
 
   private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {
     return Optional.ofNullable(collection)
-        .map(Collection::stream)
-        .orElseGet(Stream::empty);
+            .map(Collection::stream)
+            .orElseGet(Stream::empty);
   }
 }

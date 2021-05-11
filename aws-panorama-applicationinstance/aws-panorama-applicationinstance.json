@@ -1,40 +1,75 @@
 {
   "typeName": "AWS::Panorama::ApplicationInstance",
-  "description": "An example resource schema demonstrating some basic constructs and validation rules.",
+  "description": "Schema for ApplicationInstance CloudFormation Resource",
   "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-rpdk.git",
   "definitions": {
     "Name": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 255
+      "maxLength": 255,
+      "pattern": "^[a-zA-Z0-9\\-\\_]+$"
     },
     "Description": {
       "type": "string",
       "minLength": 0,
-      "maxLength": 255
+      "maxLength": 255,
+      "pattern": "^.*$"
+    },
+    "ManifestPayloadData": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 51200,
+      "pattern": "^.+$"
     },
     "ManifestPayload": {
+      "type": "object",
+      "properties": {
+        "PayloadData": {
+          "$ref": "#/definitions/ManifestPayloadData"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ManifestOverridesPayloadData": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 51200
+      "minLength": 0,
+      "maxLength": 51200,
+      "pattern": "^.+$"
     },
     "ManifestOverridesPayload": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 51200
+      "type": "object",
+      "properties": {
+        "PayloadData": {
+          "$ref": "#/definitions/ManifestOverridesPayloadData"
+        }
+      },
+      "additionalProperties": false
     },
-    "ExecutionRoleArn": {
+    "RuntimeRoleArn": {
       "type": "string",
       "minLength": 1,
       "maxLength": 255,
-      "pattern": "^arn:aws:iam::[0-9]{12}:role/.+$"
+      "pattern": "^arn:[a-z0-9][-.a-z0-9]{0,62}:iam::[0-9]{12}:role/.+$"
     },
-    "DefaultExecutionContextDevice": {
+    "DefaultRuntimeContextDevice": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 255
+      "maxLength": 255,
+      "pattern": "^[a-zA-Z0-9\\-\\_]+$"
+    },
+    "DeviceName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^[a-zA-Z0-9\\-\\_]+$"
     },
     "ApplicationInstanceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^[a-zA-Z0-9\\-\\_]+$"
+    },
+    "ApplicationInstanceArn": {
       "type": "string",
       "minLength": 1,
       "maxLength": 255
@@ -44,12 +79,7 @@
       "minLength": 1,
       "maxLength": 255
     },
-    "CreatedTime": {
-      "description": "Created time for the device",
-      "type": "integer"
-    },
-    "LastUpdatedTime": {
-      "description": "Last updated time for this device",
+    "Timestamp": {
       "type": "integer"
     },
     "DeviceId": {
@@ -61,59 +91,70 @@
     "ApplicationInstanceStatus": {
       "type": "string",
       "enum": [
-        "DEPLOYING",
-        "REMOVING",
-        "FAILED",
-        "REMOVED",
+        "DEPLOYMENT_PENDING",
+        "DEPLOYMENT_REQUESTED",
+        "DEPLOYMENT_IN_PROGRESS",
+        "DEPLOYMENT_FAILED",
+        "DEPLOYMENT_SUCCEEDED",
+        "REMOVAL_PENDING",
+        "REMOVAL_REQUESTED",
+        "REMOVAL_IN_PROGRESS",
+        "REMOVAL_FAILED",
+        "REMOVAL_SUCCEEDED"
+      ]
+    },
+    "ApplicationInstanceHealthStatus": {
+      "type": "string",
+      "enum": [
         "RUNNING",
-        "STOPPED"
+        "ERROR",
+        "NOT_AVAILABLE"
       ]
     },
     "StatusFilter": {
       "type": "string",
       "enum": [
-        "FAILED",
-        "REMOVED",
-        "RUNNING"
+        "DEPLOYMENT_SUCCEEDED",
+        "DEPLOYMENT_FAILED",
+        "REMOVAL_SUCCEEDED",
+        "REMOVAL_FAILED",
+        "PROCESSING_DEPLOYMENT",
+        "PROCESSING_REMOVAL"
       ]
     },
-    "ApplicationInstance": {
+    "Tag": {
+      "description": "A label for tagging NodePackage resources",
       "type": "object",
       "properties": {
-        "Name": {
-          "$ref": "#/definitions/Name"
+        "Key": {
+          "description": "A string used to identify this tag",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^.+$"
         },
-        "ApplicationInstanceId": {
-          "$ref": "#/definitions/ApplicationInstanceId"
-        },
-        "DefaultExecutionContextDevice": {
-          "$ref": "#/definitions/DefaultExecutionContextDevice"
-        },
-        "Description": {
-          "$ref": "#/definitions/Description"
-        },
-        "Status": {
-          "$ref": "#/definitions/ApplicationInstanceStatus"
-        },
-        "StatusDescription": {
-          "$ref": "#/definitions/ApplicationInstanceStatusDescription"
-        },
-        "CreatedTime": {
-          "$ref": "#/definitions/CreatedTime"
+        "Value": {
+          "description": "A string containing the value for the tag",
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 256,
+          "pattern": "^.+$"
         }
       },
+      "required": [
+        "Key",
+        "Value"
+      ],
       "additionalProperties": false
     },
-    "ApplicationInstances": {
+    "TagList": {
+      "description": "List of tags",
       "type": "array",
       "uniqueItems": true,
+      "maxItems": 50,
       "items": {
-        "$ref": "#/definitions/ApplicationInstance"
+        "$ref": "#/definitions/Tag"
       }
-    },
-    "MaxResults": {
-      "description": "Max number of ApplicationInstances to return for ListApplicationInstances",
-      "type": "integer"
     }
   },
   "properties": {
@@ -129,13 +170,19 @@
     "ManifestOverridesPayload": {
       "$ref": "#/definitions/ManifestOverridesPayload"
     },
-    "ExecutionRoleArn": {
-      "$ref": "#/definitions/ExecutionRoleArn"
+    "RuntimeRoleArn": {
+      "$ref": "#/definitions/RuntimeRoleArn"
     },
-    "DefaultExecutionContextDevice": {
-      "$ref": "#/definitions/DefaultExecutionContextDevice"
+    "DefaultRuntimeContextDevice": {
+      "$ref": "#/definitions/DefaultRuntimeContextDevice"
+    },
+    "DefaultRuntimeContextDeviceName": {
+      "$ref": "#/definitions/DeviceName"
     },
     "ApplicationInstanceId": {
+      "$ref": "#/definitions/ApplicationInstanceId"
+    },
+    "ApplicationInstanceIdToReplace": {
       "$ref": "#/definitions/ApplicationInstanceId"
     },
     "DeviceId": {
@@ -144,39 +191,48 @@
     "StatusFilter": {
       "$ref": "#/definitions/StatusFilter"
     },
-    "ApplicationInstances": {
-      "$ref": "#/definitions/ApplicationInstances"
-    },
     "Status": {
       "$ref": "#/definitions/ApplicationInstanceStatus"
+    },
+    "HealthStatus": {
+      "$ref": "#/definitions/ApplicationInstanceHealthStatus"
     },
     "StatusDescription": {
       "$ref": "#/definitions/ApplicationInstanceStatusDescription"
     },
     "CreatedTime": {
-      "$ref": "#/definitions/CreatedTime"
+      "$ref": "#/definitions/Timestamp"
     },
     "LastUpdatedTime": {
-      "$ref": "#/definitions/LastUpdatedTime"
+      "$ref": "#/definitions/Timestamp"
     },
-    "MaxResults": {
-      "$ref": "#/definitions/MaxResults"
+    "Arn": {
+      "$ref": "#/definitions/ApplicationInstanceArn"
+    },
+    "Tags": {
+      "$ref": "#/definitions/TagList"
     }
   },
   "additionalProperties": false,
   "required": [
-    "Name"
+    "ManifestPayload",
+    "DefaultRuntimeContextDevice"
   ],
   "readOnlyProperties": [
-    "/properties/ApplicationInstanceId"
+    "/properties/ApplicationInstanceId",
+    "/properties/Arn",
+    "/properties/Status",
+    "/properties/HealthStatus",
+    "/properties/StatusDescription"
   ],
   "createOnlyProperties": [
     "/properties/Name",
     "/properties/Description",
     "/properties/ManifestPayload",
     "/properties/ManifestOverridesPayload",
-    "/properties/ExecutionRoleArn",
-    "/properties/DefaultExecutionContextDevice"
+    "/properties/RuntimeRoleArn",
+    "/properties/DefaultRuntimeContextDevice",
+    "/properties/ApplicationInstanceIdToReplace"
   ],
   "primaryIdentifier": [
     "/properties/ApplicationInstanceId"
@@ -184,12 +240,15 @@
   "handlers": {
     "create": {
       "permissions": [
-        "panorama:CreateApplicationInstance"
+        "panorama:CreateApplicationInstance",
+        "panorama:ListTagsForResource",
+        "panorama:TagResource"
       ]
     },
     "read": {
       "permissions": [
-        "panorama:DescribeApplicationInstance"
+        "panorama:DescribeApplicationInstance",
+        "panorama:ListTagsForResource"
       ]
     },
     "delete": {

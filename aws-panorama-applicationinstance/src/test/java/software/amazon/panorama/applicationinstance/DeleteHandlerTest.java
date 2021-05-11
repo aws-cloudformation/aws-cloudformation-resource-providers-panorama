@@ -40,9 +40,9 @@ import static software.amazon.panorama.applicationinstance.Constants.APPLICATION
 import static software.amazon.panorama.applicationinstance.Constants.APPLICATION_INSTANCE_ID;
 import static software.amazon.panorama.applicationinstance.Constants.APPLICATION_INSTANCE_NAME;
 import static software.amazon.panorama.applicationinstance.Constants.DEVICE_ARN;
-import static software.amazon.panorama.applicationinstance.Constants.EXECUTION_ROLE_ARN;
 import static software.amazon.panorama.applicationinstance.Constants.MANIFEST_PAYLOAD;
 import static software.amazon.panorama.applicationinstance.Constants.MANIFEST_PAYLOAD_OVERRIDES;
+import static software.amazon.panorama.applicationinstance.Constants.RUNTIME_ROLE_ARN;
 
 @ExtendWith(MockitoExtension.class)
 public class DeleteHandlerTest extends AbstractTestBase {
@@ -84,8 +84,8 @@ public class DeleteHandlerTest extends AbstractTestBase {
                 .thenThrow(ResourceNotFoundException.builder().build());
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-            .desiredResourceState(model)
-            .build();
+                .desiredResourceState(model)
+                .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
@@ -111,10 +111,10 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -134,10 +134,10 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -157,10 +157,10 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -180,10 +180,10 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -203,10 +203,10 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()

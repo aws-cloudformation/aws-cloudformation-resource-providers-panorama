@@ -11,27 +11,20 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 public class ListHandler extends BaseHandlerStd {
-    private static final Integer DEFAULT_LIMIT = 10;
-
     @Override
     public ProgressEvent<ResourceModel, CallbackContext> handleRequest(
-        final AmazonWebServicesClientProxy proxy,
-        final ResourceHandlerRequest<ResourceModel> request,
-        final CallbackContext callbackContext,
-        final ProxyClient<PanoramaClient> proxyClient,
-        final Logger logger
+            final AmazonWebServicesClientProxy proxy,
+            final ResourceHandlerRequest<ResourceModel> request,
+            final CallbackContext callbackContext,
+            final ProxyClient<PanoramaClient> proxyClient,
+            final Logger logger
     ) {
         final ResourceModel model = request.getDesiredResourceState();
         final String deviceId = model.getDeviceId();
         final String statusFilter = model.getStatusFilter();
-        Integer maxResults = model.getMaxResults();
-
-        if (maxResults == null) {
-            maxResults = DEFAULT_LIMIT;
-        }
 
         final ListApplicationInstancesRequest listApplicationInstancesRequest =
-                Translator.translateToListRequest(deviceId, statusFilter, maxResults, request.getNextToken());
+                Translator.translateToListRequest(deviceId, statusFilter, request.getNextToken());
 
         ListApplicationInstancesResponse listApplicationInstancesResponse = proxy.injectCredentialsAndInvokeV2(listApplicationInstancesRequest,
                 proxyClient.client()::listApplicationInstances);

@@ -2,25 +2,18 @@ package software.amazon.panorama.applicationinstance;
 
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.panorama.PanoramaClient;
-import software.amazon.awssdk.services.panorama.model.AccessDeniedException;
 import software.amazon.awssdk.services.panorama.model.ApplicationInstanceStatus;
-import software.amazon.awssdk.services.panorama.model.ConflictException;
 import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceRequest;
 import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceResponse;
-import software.amazon.awssdk.services.panorama.model.InternalServerException;
+import software.amazon.awssdk.services.panorama.model.PanoramaException;
 import software.amazon.awssdk.services.panorama.model.RemoveApplicationInstanceRequest;
 import software.amazon.awssdk.services.panorama.model.RemoveApplicationInstanceResponse;
 import software.amazon.awssdk.services.panorama.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.panorama.model.ValidationException;
-import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
-import software.amazon.cloudformation.exceptions.CfnInternalFailureException;
-import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
-import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnNotStabilizedException;
-import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Delay;
+
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
@@ -35,7 +28,7 @@ public class DeleteHandler extends BaseHandlerStd {
             .delay(Duration.ofMinutes(5))
             .build();
 
-    private Logger logger;
+    private LoggerWrapper logger;
     private Delay delay;
 
     public DeleteHandler() {
@@ -44,13 +37,13 @@ public class DeleteHandler extends BaseHandlerStd {
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
-        final AmazonWebServicesClientProxy proxy,
-        final ResourceHandlerRequest<ResourceModel> request,
-        final CallbackContext callbackContext,
-        final ProxyClient<PanoramaClient> proxyClient,
-        final Logger logger
+            final AmazonWebServicesClientProxy proxy,
+            final ResourceHandlerRequest<ResourceModel> request,
+            final CallbackContext callbackContext,
+            final ProxyClient<PanoramaClient> proxyClient,
+            final Logger logger
     ) {
-        this.logger = logger;
+        this.logger = new LoggerWrapper(logger);
         final ResourceModel model = request.getDesiredResourceState();
 
         return ProgressEvent.progress(model, callbackContext)
@@ -69,7 +62,8 @@ public class DeleteHandler extends BaseHandlerStd {
             RemoveApplicationInstanceResponse removeApplicationInstanceResponse,
             ProxyClient<PanoramaClient> proxyClient,
             ResourceModel resourceModel,
-            CallbackContext callbackContext) {
+            CallbackContext callbackContext
+    ) {
         return ProgressEvent.defaultSuccessHandler(null);
     }
 
@@ -89,21 +83,21 @@ public class DeleteHandler extends BaseHandlerStd {
         try {
             removeApplicationInstanceResponse = proxyClient.injectCredentialsAndInvokeV2(
                     removeApplicationInstanceRequest, proxyClient.client()::removeApplicationInstance);
-        } catch (final ValidationException e){
-            throw new CfnInvalidRequestException(ResourceModel.TYPE_NAME, e);
-        } catch (final ResourceNotFoundException e) {
-            throw new CfnNotFoundException(ResourceModel.TYPE_NAME, removeApplicationInstanceRequest.applicationInstanceId(), e);
-        } catch (final ConflictException e) {
-            throw new CfnResourceConflictException(e);
-        } catch (final AccessDeniedException e) {
-            throw new CfnAccessDeniedException(ResourceModel.TYPE_NAME, e);
-        } catch (final InternalServerException e) {
-            throw new CfnInternalFailureException(e);
-        } catch (final AwsServiceException e) {
+        } catch (final PanoramaException e){
+            logger.error(String.format("Exception happened when removing ApplicationInstance. ApplicationInstanceId: %s",
+                    removeApplicationInstanceRequest.applicationInstanceId()));
+            throw PanoramaExceptionTranslator.translateForAPIException(e,
+                    "RemoveApplicationInstance",
+                    ResourceModel.TYPE_NAME,
+                    removeApplicationInstanceRequest.applicationInstanceId(),
+                    removeApplicationInstanceRequest.toString());
+        }  catch (final AwsServiceException e) {
+            logger.error(String.format("Exception happened when removing ApplicationInstance. ApplicationInstanceId: %s",
+                    removeApplicationInstanceRequest.applicationInstanceId()));
             throw new CfnGeneralServiceException("RemoveApplicationInstance", e);
         }
 
-        logger.log(String.format("%s successfully deleted.", ResourceModel.TYPE_NAME));
+        logger.info(String.format("%s successfully removed with ApplicationInstanceId: %s.", ResourceModel.TYPE_NAME, removeApplicationInstanceRequest.applicationInstanceId()));
         return removeApplicationInstanceResponse;
     }
 
@@ -132,7 +126,8 @@ public class DeleteHandler extends BaseHandlerStd {
         try {
             DescribeApplicationInstanceResponse describeApplicationInstanceResponse = proxyClient.injectCredentialsAndInvokeV2(describeApplicationInstanceRequest, proxyClient.client()::describeApplicationInstance);
             ApplicationInstanceStatus applicationInstanceStatus = describeApplicationInstanceResponse.status();
-            if (applicationInstanceStatus.equals(ApplicationInstanceStatus.DEPLOYMENT_FAILED)) {
+            if (applicationInstanceStatus.equals(ApplicationInstanceStatus.REMOVAL_FAILED)) {
+                logger.error(String.format("ApplicationInstance removal failed with ApplicationInstanceId: %s", removeApplicationInstanceRequest.applicationInstanceId()));
                 throw new CfnNotStabilizedException(ResourceModel.TYPE_NAME, model.getApplicationInstanceId());
             }
 
@@ -143,7 +138,7 @@ public class DeleteHandler extends BaseHandlerStd {
             stabilized = true;
         }
 
-        logger.log(String.format("%s [%s] deletion has stabilized: %s", ResourceModel.TYPE_NAME, model.getPrimaryIdentifier(), stabilized));
+        logger.info(String.format("%s deletion with ApplicationInstanceId %s has stabilized", ResourceModel.TYPE_NAME, model.getApplicationInstanceId()));
         return stabilized;
     }
 }

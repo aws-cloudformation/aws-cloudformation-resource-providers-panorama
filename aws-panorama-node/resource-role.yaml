@@ -23,12 +23,11 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                - "panorama:CreateApplicationInstance"
-                - "panorama:DescribeApplicationInstance"
-                - "panorama:ListApplicationInstances"
-                - "panorama:ListTagsForResource"
-                - "panorama:RemoveApplicationInstance"
-                - "panorama:TagResource"
+                - "initech:CreateReport"
+                - "initech:DeleteReport"
+                - "initech:DescribeReport"
+                - "initech:ListReports"
+                - "initech:UpdateReport"
                 Resource: "*"
 Outputs:
   ExecutionRoleArn:

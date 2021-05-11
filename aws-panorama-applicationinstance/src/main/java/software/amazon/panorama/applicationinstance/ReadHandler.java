@@ -2,18 +2,12 @@ package software.amazon.panorama.applicationinstance;
 
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.panorama.PanoramaClient;
-import software.amazon.awssdk.services.panorama.model.AccessDeniedException;
-import software.amazon.awssdk.services.panorama.model.ConflictException;
+import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceRequest;
 import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceResponse;
-import software.amazon.awssdk.services.panorama.model.InternalServerException;
-import software.amazon.awssdk.services.panorama.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.panorama.model.ValidationException;
-import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
+import software.amazon.awssdk.services.panorama.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.panorama.model.ListTagsForResourceResponse;
+import software.amazon.awssdk.services.panorama.model.PanoramaException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
-import software.amazon.cloudformation.exceptions.CfnInternalFailureException;
-import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
-import software.amazon.cloudformation.exceptions.CfnNotFoundException;
-import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -21,40 +15,55 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 public class ReadHandler extends BaseHandlerStd {
-    private Logger logger;
+    private LoggerWrapper logger;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
-        final AmazonWebServicesClientProxy proxy,
-        final ResourceHandlerRequest<ResourceModel> request,
-        final CallbackContext callbackContext,
-        final ProxyClient<PanoramaClient> proxyClient,
-        final Logger logger
+            final AmazonWebServicesClientProxy proxy,
+            final ResourceHandlerRequest<ResourceModel> request,
+            final CallbackContext callbackContext,
+            final ProxyClient<PanoramaClient> proxyClient,
+            final Logger logger
     ) {
-        this.logger = logger;
-        return proxy.initiate("AWS-Panorama-ApplicationInstance::Read", proxyClient, request.getDesiredResourceState(), callbackContext)
-                .translateToServiceRequest(Translator::translateToReadRequest)
-                .makeServiceCall((describeApplicationInstanceRequest, client) -> {
-                    DescribeApplicationInstanceResponse describeApplicationInstanceResponse;
+        this.logger = new LoggerWrapper(logger);
 
-                    try {
-                        describeApplicationInstanceResponse = client.injectCredentialsAndInvokeV2(describeApplicationInstanceRequest, client.client()::describeApplicationInstance);
-                    } catch (ConflictException e) {
-                        throw new CfnResourceConflictException(e);
-                    } catch (ValidationException e) {
-                        throw new CfnInvalidRequestException(ResourceModel.TYPE_NAME, e);
-                    } catch (AccessDeniedException e) {
-                        throw new CfnAccessDeniedException(ResourceModel.TYPE_NAME, e);
-                    } catch (ResourceNotFoundException e) {
-                        throw new CfnNotFoundException(ResourceModel.TYPE_NAME, describeApplicationInstanceRequest.applicationInstanceId(), e);
-                    } catch (InternalServerException e) {
-                        throw new CfnInternalFailureException(e);
-                    } catch (AwsServiceException e) {
-                        throw new CfnGeneralServiceException("DescribeApplicationInstance", e);
-                    }
+        final ResourceModel model = request.getDesiredResourceState();
+        final DescribeApplicationInstanceRequest describeApplicationInstanceRequest = Translator.translateToReadRequest(model);
+        DescribeApplicationInstanceResponse describeApplicationInstanceResponse;
 
-                    logger.log(String.format("%s has successfully been read.", ResourceModel.TYPE_NAME));
-                    return describeApplicationInstanceResponse;
-                })
-                .done(response -> ProgressEvent.defaultSuccessHandler(Translator.translateFromReadResponse(response)));
+        try {
+            describeApplicationInstanceResponse = proxyClient.injectCredentialsAndInvokeV2(describeApplicationInstanceRequest,
+                    proxyClient.client()::describeApplicationInstance);
+        } catch (PanoramaException e) {
+            this.logger.error(String.format("Exception happened when reading ApplicationInstance. ApplicationInstanceId: %s",
+                    describeApplicationInstanceRequest.applicationInstanceId()));
+            throw PanoramaExceptionTranslator.translateForAPIException(e,
+                    "DescribeApplicationInstance",
+                    ResourceModel.TYPE_NAME,
+                    describeApplicationInstanceRequest.applicationInstanceId(),
+                    describeApplicationInstanceRequest.toString());
+        }  catch (AwsServiceException e) {
+            this.logger.error(String.format("Exception happened when reading ApplicationInstance. ApplicationInstanceId: %s",
+                    describeApplicationInstanceRequest.applicationInstanceId()));
+            throw new CfnGeneralServiceException("DescribeApplicationInstance", e);
+        }
+
+        ListTagsForResourceRequest listTagsForResourceRequest = ListTagsForResourceRequest.builder()
+                .resourceArn(describeApplicationInstanceResponse.arn())
+                .build();
+        ListTagsForResourceResponse listTagsForResourceResponse;
+        try {
+            listTagsForResourceResponse = proxyClient.injectCredentialsAndInvokeV2(listTagsForResourceRequest,
+                    proxyClient.client()::listTagsForResource);
+        } catch (PanoramaException e) {
+            this.logger.error(String.format("Exception happened when listing tags for ApplicationInstance. ApplicationInstanceArn: %s",
+                    describeApplicationInstanceResponse.arn()));
+            throw PanoramaExceptionTranslator.translateForAPIException(e,
+                    "ListTagsForApplicationInstance",
+                    ResourceModel.TYPE_NAME,
+                    describeApplicationInstanceResponse.arn(),
+                    listTagsForResourceRequest.toString());
+        }
+
+        return ProgressEvent.defaultSuccessHandler(Translator.translateFromReadResponse(describeApplicationInstanceResponse, listTagsForResourceResponse));
     }
 }

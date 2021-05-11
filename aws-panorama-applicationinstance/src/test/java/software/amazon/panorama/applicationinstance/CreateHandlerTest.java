@@ -2,15 +2,21 @@ package software.amazon.panorama.applicationinstance;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import software.amazon.awssdk.services.panorama.PanoramaClient;
 import software.amazon.awssdk.services.panorama.model.AccessDeniedException;
+import software.amazon.awssdk.services.panorama.model.ApplicationInstanceHealthStatus;
 import software.amazon.awssdk.services.panorama.model.ApplicationInstanceStatus;
 import software.amazon.awssdk.services.panorama.model.CreateApplicationInstanceRequest;
 import software.amazon.awssdk.services.panorama.model.CreateApplicationInstanceResponse;
 import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceRequest;
 import software.amazon.awssdk.services.panorama.model.DescribeApplicationInstanceResponse;
 import software.amazon.awssdk.services.panorama.model.InternalServerException;
+import software.amazon.awssdk.services.panorama.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.panorama.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.panorama.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.panorama.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
@@ -42,10 +48,10 @@ import static software.amazon.panorama.applicationinstance.Constants.APPLICATION
 import static software.amazon.panorama.applicationinstance.Constants.APPLICATION_INSTANCE_NAME;
 import static software.amazon.panorama.applicationinstance.Constants.CREATED_TIME;
 import static software.amazon.panorama.applicationinstance.Constants.DEVICE_ARN;
-import static software.amazon.panorama.applicationinstance.Constants.EXECUTION_ROLE_ARN;
 import static software.amazon.panorama.applicationinstance.Constants.LAST_UPDATED_TIME;
 import static software.amazon.panorama.applicationinstance.Constants.MANIFEST_PAYLOAD;
 import static software.amazon.panorama.applicationinstance.Constants.MANIFEST_PAYLOAD_OVERRIDES;
+import static software.amazon.panorama.applicationinstance.Constants.RUNTIME_ROLE_ARN;
 import static software.amazon.panorama.applicationinstance.Constants.STATUS_DESCRIPTION;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -82,15 +88,15 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-            .desiredResourceState(model)
-            .build();
+                .desiredResourceState(model)
+                .build();
 
         when(proxyClient.client().createApplicationInstance(any(CreateApplicationInstanceRequest.class)))
                 .thenReturn(CreateApplicationInstanceResponse.builder().applicationInstanceId(APPLICATION_INSTANCE_ID).build());
@@ -99,15 +105,17 @@ public class CreateHandlerTest extends AbstractTestBase {
                         .applicationInstanceId(APPLICATION_INSTANCE_ID)
                         .name(APPLICATION_INSTANCE_NAME)
                         .description(APPLICATION_INSTANCE_DESCRIPTION)
-                        .defaultExecutionContextDevice(DEVICE_ARN)
-                        .manifestPayload(MANIFEST_PAYLOAD)
-                        .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                        .executionRoleArn(EXECUTION_ROLE_ARN)
+                        .defaultRuntimeContextDevice(DEVICE_ARN)
+                        .runtimeRoleArn(RUNTIME_ROLE_ARN)
                         .status(ApplicationInstanceStatus.DEPLOYMENT_SUCCEEDED)
+                        .healthStatus(ApplicationInstanceHealthStatus.RUNNING)
                         .statusDescription(STATUS_DESCRIPTION)
                         .createdTime(Instant.ofEpochSecond(CREATED_TIME))
                         .lastUpdatedTime(Instant.ofEpochSecond(LAST_UPDATED_TIME))
                         .build());
+
+        when(proxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
+                .thenReturn(ListTagsForResourceResponse.builder().build());
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
@@ -115,11 +123,10 @@ public class CreateHandlerTest extends AbstractTestBase {
                 .applicationInstanceId(APPLICATION_INSTANCE_ID)
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .defaultExecutionContextDevice(DEVICE_ARN)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
                 .status(ApplicationInstanceStatus.DEPLOYMENT_SUCCEEDED.toString())
+                .healthStatus(ApplicationInstanceHealthStatus.RUNNING.toString())
                 .statusDescription(STATUS_DESCRIPTION)
                 .createdTime(CREATED_TIME)
                 .lastUpdatedTime(LAST_UPDATED_TIME)
@@ -138,6 +145,78 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_Tags() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+                .name(APPLICATION_INSTANCE_NAME)
+                .description(APPLICATION_INSTANCE_DESCRIPTION)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
+                .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+                .desiredResourceState(model)
+                .build();
+
+        when(proxyClient.client().createApplicationInstance(any(CreateApplicationInstanceRequest.class)))
+                .thenReturn(CreateApplicationInstanceResponse.builder().applicationInstanceId(APPLICATION_INSTANCE_ID).build());
+        when(proxyClient.client().describeApplicationInstance(any(DescribeApplicationInstanceRequest.class)))
+                .thenReturn(DescribeApplicationInstanceResponse.builder()
+                        .applicationInstanceId(APPLICATION_INSTANCE_ID)
+                        .name(APPLICATION_INSTANCE_NAME)
+                        .description(APPLICATION_INSTANCE_DESCRIPTION)
+                        .defaultRuntimeContextDevice(DEVICE_ARN)
+                        .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                        .status(ApplicationInstanceStatus.DEPLOYMENT_SUCCEEDED)
+                        .healthStatus(ApplicationInstanceHealthStatus.RUNNING)
+                        .statusDescription(STATUS_DESCRIPTION)
+                        .createdTime(Instant.ofEpochSecond(CREATED_TIME))
+                        .lastUpdatedTime(Instant.ofEpochSecond(LAST_UPDATED_TIME))
+                        .build());
+
+        String key = "key";
+        String value = "value";
+        Map<String, String> tagMap = new HashMap<>();
+        tagMap.put(key, value);
+        when(proxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
+                .thenReturn(ListTagsForResourceResponse
+                        .builder()
+                        .tags(tagMap)
+                        .build());
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        ResourceModel expectedResourceModel = ResourceModel.builder()
+                .applicationInstanceId(APPLICATION_INSTANCE_ID)
+                .name(APPLICATION_INSTANCE_NAME)
+                .description(APPLICATION_INSTANCE_DESCRIPTION)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .status(ApplicationInstanceStatus.DEPLOYMENT_SUCCEEDED.toString())
+                .healthStatus(ApplicationInstanceHealthStatus.RUNNING.toString())
+                .statusDescription(STATUS_DESCRIPTION)
+                .createdTime(CREATED_TIME)
+                .lastUpdatedTime(LAST_UPDATED_TIME)
+                .tags(Arrays.asList(software.amazon.panorama.applicationinstance.Tag.builder().key(key).value(value).build()))
+                .build();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isEqualTo(expectedResourceModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(proxyClient.client(), times(1)).createApplicationInstance(any(CreateApplicationInstanceRequest.class));
+        verify(proxyClient.client(), times(2)).describeApplicationInstance(any(DescribeApplicationInstanceRequest.class));
+        verify(proxyClient.client(), times(1)).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
+    @Test
     public void handleRequest_throws_CfnInvalidRequestException() {
         final CreateHandler handler = new CreateHandler();
 
@@ -147,10 +226,10 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -170,10 +249,10 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -193,10 +272,10 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -216,10 +295,10 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
                 .name(APPLICATION_INSTANCE_NAME)
                 .description(APPLICATION_INSTANCE_DESCRIPTION)
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .manifestOverridesPayload(MANIFEST_PAYLOAD_OVERRIDES)
-                .executionRoleArn(EXECUTION_ROLE_ARN)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .manifestOverridesPayload(ManifestOverridesPayload.builder().payloadData(MANIFEST_PAYLOAD_OVERRIDES).build())
+                .runtimeRoleArn(RUNTIME_ROLE_ARN)
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()

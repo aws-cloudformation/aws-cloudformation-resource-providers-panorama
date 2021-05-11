@@ -8,7 +8,7 @@ public class Constants {
     public static final String DEVICE_ID = "automation-default";
     public static final String MANIFEST_PAYLOAD = "{\"name\":\"John\",\"age\":30,\"city\":\"New York\"}";
     public static final String MANIFEST_PAYLOAD_OVERRIDES = "{\"name\":\"Henry\"}";
-    public static final String EXECUTION_ROLE_ARN = "arn:aws:iam::627146104544:role/service-role/AWSPanoramaApplianceRole";
+    public static final String RUNTIME_ROLE_ARN = "arn:aws:iam::627146104544:role/service-role/AWSPanoramaApplianceRole";
     public static final String STATUS_DESCRIPTION = "Application Instance status is pending";
     public static final Integer CREATED_TIME = 1618354585;
     public static final Integer LAST_UPDATED_TIME = 1618354585;

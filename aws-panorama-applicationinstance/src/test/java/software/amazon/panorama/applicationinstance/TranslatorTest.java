@@ -36,33 +36,30 @@ public class TranslatorTest {
     @Test
     void testTranslateToCreateRequest() {
         ResourceModel model = ResourceModel.builder()
-                .manifestPayload(MANIFEST_PAYLOAD)
-                .defaultExecutionContextDevice(DEVICE_ARN)
+                .manifestPayload(ManifestPayload.builder().payloadData(MANIFEST_PAYLOAD).build())
+                .defaultRuntimeContextDevice(DEVICE_ARN)
                 .build();
         CreateApplicationInstanceRequest request = Translator.translateToCreateRequest(model);
-        assertThat(request.manifestPayload()).isEqualTo(MANIFEST_PAYLOAD);
-        assertThat(request.defaultExecutionContextDevice()).isEqualTo(DEVICE_ARN);
+        assertThat(request.manifestPayload()).isEqualTo(software.amazon.awssdk.services.panorama.model.ManifestPayload.builder()
+                .payloadData(MANIFEST_PAYLOAD).build());
+        assertThat(request.defaultRuntimeContextDevice()).isEqualTo(DEVICE_ARN);
     }
 
     @Test
     void testTranslateToListRequest()  {
         String nextToken = "nextToken";
         String statusFilter = StatusFilter.DEPLOYMENT_SUCCEEDED.toString();
-        Integer maxResults = 10;
 
         ResourceModel model = ResourceModel.builder()
                 .deviceId(DEVICE_ID)
                 .statusFilter(statusFilter)
-                .maxResults(maxResults)
                 .build();
 
-        ListApplicationInstancesRequest request = Translator.translateToListRequest(model.getDeviceId(), model.getStatusFilter(),
-                model.getMaxResults(), nextToken);
+        ListApplicationInstancesRequest request = Translator.translateToListRequest(model.getDeviceId(), model.getStatusFilter(), nextToken);
 
         assertThat(request.deviceId()).isEqualTo(DEVICE_ID);
         assertThat(request.statusFilter().toString()).isEqualTo(statusFilter);
         assertThat(request.nextToken()).isEqualTo(nextToken);
-        assertThat(request.maxResults()).isEqualTo(maxResults);
     }
 
 }
