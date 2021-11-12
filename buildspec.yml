@@ -13,3 +13,5 @@ phases:
       - pre-commit run --all-files
       - cd "$CODEBUILD_SRC_DIR/aws-panorama-package"
       - mvn clean verify --no-transfer-progress
+      - cd "$CODEBUILD_SRC_DIR/aws-panorama-packageversion"
+      - mvn clean verify --no-transfer-progress
