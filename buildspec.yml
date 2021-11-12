@@ -15,3 +15,5 @@ phases:
       - mvn clean verify --no-transfer-progress
       - cd "$CODEBUILD_SRC_DIR/aws-panorama-packageversion"
       - mvn clean verify --no-transfer-progress
+      - cd "$CODEBUILD_SRC_DIR/aws-panorama-applicationinstance"
+      - mvn clean verify --no-transfer-progress
