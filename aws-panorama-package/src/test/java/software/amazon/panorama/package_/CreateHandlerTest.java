@@ -125,7 +125,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(proxyClient.client(), times(1)).createPackage(any(CreatePackageRequest.class));
-        verify(proxyClient.client(), times(2)).describePackage(any(DescribePackageRequest.class));
+        verify(proxyClient.client(), times(1)).describePackage(any(DescribePackageRequest.class));
     }
 
     @Test
@@ -211,6 +211,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(proxyClient.client(), times(1)).createPackage(any(CreatePackageRequest.class));
-        verify(proxyClient.client(), times(2)).describePackage(any(DescribePackageRequest.class));
+        verify(proxyClient.client(), times(1)).describePackage(any(DescribePackageRequest.class));
     }
 }

@@ -5,6 +5,7 @@ import software.amazon.awssdk.services.panorama.PanoramaClient;
 import software.amazon.awssdk.services.panorama.model.CreatePackageRequest;
 import software.amazon.awssdk.services.panorama.model.CreatePackageResponse;
 import software.amazon.awssdk.services.panorama.model.DescribePackageRequest;
+import software.amazon.awssdk.services.panorama.model.DescribePackageResponse;
 import software.amazon.awssdk.services.panorama.model.PanoramaException;
 import software.amazon.awssdk.services.panorama.model.ResourceNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
@@ -24,6 +25,7 @@ public class CreateHandler extends BaseHandlerStd {
 
     private static final String OPERATION = "CreatePackage";
     private LoggerWrapper logger;
+    private DescribePackageResponse describePackageResponse;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
             final AmazonWebServicesClientProxy proxy,
@@ -44,7 +46,7 @@ public class CreateHandler extends BaseHandlerStd {
                                 .done(this::setPackageId)
                 )
                 .then(progress -> stabilize(proxy, proxyClient, progress))
-                .then(progress -> new ReadHandler().handleRequest(proxy, request, callbackContext, proxyClient, logger));
+                .then(progress -> ProgressEvent.defaultSuccessHandler(Translator.translateFromReadResponse(describePackageResponse)));
     }
 
     /**
@@ -99,7 +101,7 @@ public class CreateHandler extends BaseHandlerStd {
         final DescribePackageRequest describePackageRequest = Translator.translateToReadRequest(model);
 
         try {
-            proxyClient.injectCredentialsAndInvokeV2(describePackageRequest, proxyClient.client()::describePackage);
+            describePackageResponse = proxyClient.injectCredentialsAndInvokeV2(describePackageRequest, proxyClient.client()::describePackage);
         } catch (ResourceNotFoundException e) {
             return false;
         } catch (PanoramaException e) {
